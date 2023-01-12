@@ -1,0 +1,65 @@
+---
+
+# Fix etc hosts file
+- name: Fix /etc/hosts
+  template:
+    src: ../config/hosts.j2
+    dest: "/etc/hosts"
+    owner: root
+    group: root
+    mode: 0644
+
+# Fix sudoers 
+- name: Allow 'sudo' group to have passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%sudo'
+    line: '%sudo ALL=(ALL:ALL) NOPASSWD:ALL'
+    validate: visudo -cf %s
+
+# Install packages and pip packages
+- name: Install packages that I need for my life.
+  apt:
+    name: "{{packages}}"
+    state: present
+    autoremove: yes 
+    update_cache: yes 
+  vars:
+    packages:
+    - docker.io
+    - git
+    - vim
+    - python3
+    - python3-pip
+    - htop
+    - python-pkg-resources
+
+  #- name: Install pip packages
+  #  pip:
+  #    name:
+  #      - docker-py
+  #      - cookiecutter
+  #    executable: pip3
+
+# Check if docker.io package is hold
+- name: Check if docker.io package is hold
+  command: apt-mark showhold
+  register: held_packages
+  changed_when: false
+
+# Hold unholded docker.io package 
+- name: Hold docker.io package
+  command: apt-mark hold docker.io
+  when: '"docker.io" not in held_packages.stdout'
+
+  # - name: Set authorized key, removing all the authorized keys already set 
+  #   authorized_key:
+  #     user: root
+  #     key: "{{ lookup('pipe','cat config/pub_keys/*.pub') }}"
+  #     state: present
+  #     exclusive: yes 
+
+- name: Set timezone to Europe/Prague
+  timezone:
+     name: Europe/Prague

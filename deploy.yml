@@ -1,0 +1,9 @@
+---
+
+# Setup project systems
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Gather required facts facts
+      setup:
+    - include: tasks/configure-system.yml
